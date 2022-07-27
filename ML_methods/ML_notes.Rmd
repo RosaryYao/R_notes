@@ -1,0 +1,67 @@
+---
+title: "ML notes"
+output: html_notebook
+---
+
+Records the codes in ML-based feature selection. This page includes:
+
+* [Data imputation (Random Forest)](#data_imputation)
+* [Multiple logistic regression (R base)](#logistic)
+* [Multiple linear regression (LASSO)](#multiple_linear_regression)
+* [Multivariate multiple linear regression (LASSO)](#multivariate_linear_regression)
+* [LASSO stability selection](#stability_selection)
+* [CCA (intend to include) / Sparse CCA](#cca)
+* [SVM](#svm)
+* [Random Forest](#random_forest)
+
+### <a id="data_imputation"></a>Data imputation 
+
+Implement random forest for data imputation. Use "clinic_features" as an example.
+```{r}
+library(randomForest)
+
+clinic_features <- read.table("data/clinic_features.csv", sep=",", header=TRUE, row.names=1, check.names=FALSE) # check.names=FALSE so colnames could start with numeric characters
+clinic_features$outcome <- as.factor(clinic_features$outcome)  # Need to convert outcome to factors, otherwise regression would be made
+print(paste0("The number of NA values: ", sum(is.na(clinic_features))))
+head(clinic_features)
+clinic_features.imputed <- randomForest::rfImpute(outcome ~., clinic_features)
+```
+
+OOB = out of bag error
+
+From ?rfImpute:
+
+The algorithm starts by imputing NAs using na.roughfix. Then randomForest is called with the completed data. The proximity matrix from the randomForest is used to update the imputation of the NAs. For continuous predictors, the imputed value is the weighted average of the non-missing obervations, where the weights are the proximities. For categorical predictors, the imputed value is the category with the largest average proximity. This process is iterated iter times.
+
+
+Note: Imputation has not (yet) been implemented for the unsupervised case. Also, Breiman (2003) notes that the OOB estimate of error from randomForest tend to be optimistic when run on the data matrix with imputed values.
+
+
+**I added:**
+Random forest uses bootstrapped dataset for training a tree. Thus, each time when it selects and build a dataset, certain number of cases would be left out (out-of-bag), and thus the left-out data are collected and used for prediction. The OOB error is the error rate  during prediction using the built model. (Yes! rfImpute builds random forest models consecutively during each iteration. Default iteration = 5.) 
+
+### <a id="logistic">Multiple logistic regression
+R base functions provide p-values. P-values probabily calculated from R^2 and F. 
+
+Select clinic_features.imputed related to outcome:
+```{r}
+# First scale
+clinic_features.imputed[, which(colnames(clinic_features.imputed) != "outcome")] <- apply(clinic_features.imputed[, which(colnames(clinic_features.imputed) != "outcome")], 2, function(x) (x-mean(x))/(max(x)-min(x)))
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
